@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LiverAI — Fatty Liver Disease Detection</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+/* ── Reset ─────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:#1e293b;line-height:1.6}
+
+/* ── NAVBAR ─────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:#fff;border-bottom:1px solid #e2e8f0;
+  padding:0 2.5rem;height:66px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 1px 12px rgba(0,0,0,.06);
+}
+.brand{display:flex;align-items:center;gap:.55rem;text-decoration:none;
+  font-size:1.2rem;font-weight:800;color:#4f46e5;}
+.brand svg{flex-shrink:0}
+.brand-sub{font-size:.7rem;font-weight:500;color:#64748b;margin-left:.1rem;
+  background:#eef2ff;padding:.15rem .55rem;border-radius:20px}
+.nav-links{display:flex;gap:.5rem;align-items:center}
+.nav-links a{color:#64748b;text-decoration:none;font-size:.83rem;
+  padding:.4rem .8rem;border-radius:8px;transition:background .15s,color .15s}
+.nav-links a:hover{background:#f1f5f9;color:#1e293b}
+.btn-cta{background:linear-gradient(135deg,#4f46e5,#7c3aed) !important;
+  color:#fff !important;font-weight:700 !important;
+  padding:.45rem 1.3rem !important;border-radius:10px !important;
+  box-shadow:0 3px 10px rgba(79,70,229,.3)}
+.btn-cta:hover{opacity:.9;background:none !important}
+
+/* ── HERO ────────────────────────────────────── */
+.hero{
+  background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 45%,#2563eb 100%);
+  padding:5.5rem 2rem 4rem;text-align:center;position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;bottom:-2px;left:0;right:0;height:60px;
+  background:#f0f4f8;clip-path:ellipse(55% 100% at 50% 100%);
+}
+.hero-pill{display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+  color:#fff;font-size:.75rem;padding:.3rem 1rem;border-radius:20px;
+  margin-bottom:1.5rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.hero h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:900;color:#fff;
+  line-height:1.12;margin-bottom:1rem}
+.hero h1 em{font-style:normal;color:#fff}
+.hero p{font-size:1rem;color:rgba(255,255,255,.82);max-width:560px;
+  margin:0 auto 2.5rem}
+.hero-badges{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+  color:#fff;padding:.45rem 1.1rem;border-radius:10px;font-size:.8rem;font-weight:600}
+
+/* ── LAYOUT ─────────────────────────────────── */
+.page{max-width:1080px;margin:0 auto;padding:3rem 1.5rem 5rem}
+
+/* ── SECTION TITLE ───────────────────────────── */
+.sec-title{text-align:center;margin-bottom:2.5rem}
+.sec-title h2{font-size:1.75rem;font-weight:800;color:#1e293b;margin-bottom:.4rem}
+.sec-title p{color:#64748b;font-size:.92rem;max-width:520px;margin:0 auto}
+.sec-title .line{width:50px;height:4px;background:linear-gradient(90deg,#4f46e5,#7c3aed);
+  border-radius:4px;margin:.75rem auto 0}
+
+/* ── CARD ────────────────────────────────────── */
+.card{background:#fff;border-radius:18px;padding:2rem;
+  box-shadow:0 2px 20px rgba(0,0,0,.07);border:1px solid #e8edf3}
+.card-icon{width:46px;height:46px;border-radius:12px;display:flex;
+  align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+.card-header{display:flex;align-items:flex-start;gap:.9rem;
+  padding-bottom:1.2rem;margin-bottom:1.5rem;
+  border-bottom:2px solid #f1f5f9}
+.card-header h3{font-size:1rem;font-weight:700;color:#1e293b}
+.card-header p{font-size:.77rem;color:#94a3b8;margin-top:.15rem}
+
+/* ── FORM ────────────────────────────────────── */
+.field-group-title{font-size:.7rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:#4f46e5;
+  display:flex;align-items:center;gap:.6rem;margin:1.4rem 0 .8rem}
+.field-group-title::after{content:'';flex:1;height:1.5px;background:#e8f0fe}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.9rem}
+.fg{display:flex;flex-direction:column;gap:.35rem}
+.fg label{font-size:.77rem;font-weight:700;color:#475569}
+.fg label .unit{font-weight:400;color:#94a3b8;font-size:.7rem}
+.fg input,.fg select{
+  border:1.5px solid #e2e8f0;border-radius:10px;
+  padding:.6rem .85rem;font-size:.9rem;color:#1e293b;
+  background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;width:100%
+}
+.fg input:focus,.fg select:focus{
+  border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+.fg .hint{font-size:.68rem;color:#94a3b8}
+
+/* ── PREDICT BUTTON ─────────────────────────── */
+.btn-predict{
+  width:100%;margin-top:1.75rem;padding:1rem 2rem;
+  border:none;border-radius:13px;cursor:pointer;
+  background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 60%,#2563eb 100%);
+  background-size:200%;
+  color:#fff;font-size:1rem;font-weight:700;letter-spacing:.02em;
+  box-shadow:0 5px 20px rgba(79,70,229,.35);
+  transition:background-position .4s,box-shadow .3s,transform .15s;
+  display:flex;align-items:center;justify-content:center;gap:.6rem;
+}
+.btn-predict:hover{background-position:right;box-shadow:0 8px 28px rgba(79,70,229,.5);transform:translateY(-1px)}
+.btn-predict:active{transform:translateY(0)}
+.btn-predict:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── ERROR ───────────────────────────────────── */
+#err-box{display:none;margin-top:1rem;background:#fff5f5;border:1.5px solid #fca5a5;
+  border-left:5px solid #ef4444;border-radius:10px;padding:.9rem 1.1rem;
+  color:#b91c1c;font-size:.85rem}
+
+/* ── RESULTS ─────────────────────────────────── */
+#results{display:none;margin-top:2rem;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+.result-hero{border-radius:18px;padding:2rem 2.2rem;margin-bottom:1.5rem;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.5rem}
+.rh-disease {background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:2px solid #fca5a5}
+.rh-moderate{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2px solid #fcd34d}
+.rh-healthy {background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #86efac}
+.rh-title{font-size:1.5rem;font-weight:800}
+.rh-disease  .rh-title{color:#be123c}
+.rh-moderate .rh-title{color:#92400e}
+.rh-healthy  .rh-title{color:#065f46}
+.risk-pill{display:inline-block;padding:.3rem .9rem;border-radius:20px;
+  font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:.4rem}
+.rh-disease  .risk-pill{background:#fee2e2;color:#b91c1c}
+.rh-moderate .risk-pill{background:#fef9c3;color:#854d0e}
+.rh-healthy  .risk-pill{background:#dcfce7;color:#15803d}
+.conf-box{background:rgba(255,255,255,.7);border-radius:14px;padding:1rem 1.5rem;
+  text-align:center;border:1.5px solid rgba(255,255,255,.9);
+  box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.conf-num{font-size:2.4rem;font-weight:900;line-height:1}
+.rh-disease  .conf-num{color:#dc2626}
+.rh-moderate .conf-num{color:#d97706}
+.rh-healthy  .conf-num{color:#16a34a}
+.conf-sub{font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-top:.25rem}
+
+.model-pills{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+.mp{background:rgba(255,255,255,.65);border:1.5px solid rgba(255,255,255,.9);
+  border-radius:10px;padding:.5rem .9rem;text-align:center;min-width:95px}
+.mp-val{font-size:1.15rem;font-weight:800;color:#4f46e5}
+.mp-lbl{font-size:.66rem;color:#94a3b8;margin-top:.1rem}
+
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem}
+@media(max-width:680px){.res-grid{grid-template-columns:1fr}}
+.rc-title{font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  color:#64748b;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.rc-title::before{content:'';width:4px;height:14px;border-radius:2px;
+  background:linear-gradient(180deg,#4f46e5,#7c3aed);display:inline-block}
+
+/* Flags */
+.flag{background:#fffbeb;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;
+  padding:.5rem .8rem;margin-bottom:.45rem;font-size:.8rem;color:#78350f}
+.flag-ok{color:#15803d;font-size:.82rem;background:#f0fdf4;
+  padding:.6rem .8rem;border-radius:8px;border:1px solid #bbf7d0}
+
+/* Recs */
+.rec-item{display:flex;gap:.7rem;align-items:flex-start;
+  padding:.6rem 0;border-bottom:1px solid #f1f5f9}
+.rec-item:last-child{border:none}
+.rec-num{min-width:26px;height:26px;border-radius:50%;font-size:.72rem;
+  font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rh-disease  ~ * .rec-num,.rec-disease{background:linear-gradient(135deg,#dc2626,#ef4444)}
+.rec-moderate{background:linear-gradient(135deg,#d97706,#f59e0b)}
+.rec-low{background:linear-gradient(135deg,#16a34a,#22c55e)}
+.rec-text{font-size:.83rem;color:#374151;line-height:1.5}
+
+.btn-reset{margin-top:1.5rem;width:100%;padding:.8rem;border-radius:11px;
+  border:2px solid #e2e8f0;background:#fff;font-size:.9rem;font-weight:700;
+  color:#64748b;cursor:pointer;transition:all .2s}
+.btn-reset:hover{border-color:#4f46e5;color:#4f46e5;background:#eef2ff}
+
+/* ── INFO SECTIONS ───────────────────────────── */
+.info-section{padding:5rem 2rem}
+.info-section:nth-child(odd){background:#fff}
+.info-section:nth-child(even){background:#f8fafc}
+
+/* Feature grid */
+.feature-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.2rem}
+.feat-card{background:#fff;border-radius:16px;padding:1.5rem;
+  border:1.5px solid #e8edf3;box-shadow:0 1px 8px rgba(0,0,0,.05);
+  transition:transform .2s,box-shadow .2s}
+.feat-card:hover{transform:translateY(-4px);box-shadow:0 6px 24px rgba(0,0,0,.1)}
+.feat-card .ficon{width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;margin-bottom:1rem}
+.feat-card h4{font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:.4rem}
+.feat-card p{font-size:.8rem;color:#64748b;line-height:1.6}
+
+/* Biomarker table */
+.bio-table{width:100%;border-collapse:separate;border-spacing:0;
+  border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.bio-table thead tr{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+.bio-table th{padding:.85rem 1rem;font-size:.78rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;text-align:left}
+.bio-table tbody tr{background:#fff;border-bottom:1px solid #f1f5f9;
+  transition:background .15s}
+.bio-table tbody tr:hover{background:#f8f5ff}
+.bio-table td{padding:.75rem 1rem;font-size:.84rem;color:#374151}
+.bio-table td:first-child{font-weight:700;color:#1e293b}
+.pill-normal{background:#dcfce7;color:#15803d;padding:.2rem .6rem;
+  border-radius:20px;font-size:.7rem;font-weight:700}
+
+/* Risk cards */
+.risk-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.2rem}
+.risk-card{border-radius:16px;padding:1.5rem;text-align:center;
+  border:2px solid transparent}
+.risk-card.low{background:#f0fdf4;border-color:#86efac}
+.risk-card.mod{background:#fffbeb;border-color:#fcd34d}
+.risk-card.high{background:#fff1f2;border-color:#fca5a5}
+.risk-card .r-pct{font-size:2rem;font-weight:900;margin-bottom:.3rem}
+.risk-card.low  .r-pct{color:#16a34a}
+.risk-card.mod  .r-pct{color:#d97706}
+.risk-card.high .r-pct{color:#dc2626}
+.risk-card h4{font-size:.9rem;font-weight:700;margin-bottom:.5rem}
+.risk-card p{font-size:.78rem;color:#64748b;line-height:1.6}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem}
+.stat-box{background:#fff;border-radius:14px;padding:1.4rem;text-align:center;
+  border:1.5px solid #e8edf3;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+.stat-box .s-num{font-size:2rem;font-weight:900;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-box .s-lbl{font-size:.76rem;color:#64748b;margin-top:.2rem;text-transform:uppercase;letter-spacing:.05em}
+
+/* How it works steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.5rem;
+  counter-reset:steps}
+.step{position:relative;background:#fff;border-radius:16px;padding:1.5rem 1.2rem 1.2rem;
+  border:1.5px solid #e8edf3;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+.step::before{counter-increment:steps;content:counter(steps);
+  position:absolute;top:-14px;left:1.2rem;
+  width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  color:#fff;font-size:.75rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.step h4{font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:.4rem;margin-top:.2rem}
+.step p{font-size:.78rem;color:#64748b;line-height:1.6}
+
+/* FAQ */
+.faqs{display:flex;flex-direction:column;gap:.8rem;max-width:720px;margin:0 auto}
+.faq{background:#fff;border-radius:12px;border:1.5px solid #e8edf3;overflow:hidden}
+.faq-q{padding:1rem 1.2rem;font-size:.9rem;font-weight:700;color:#1e293b;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:background .15s}
+.faq-q:hover{background:#f8f5ff}
+.faq-q::after{content:'+';font-size:1.2rem;color:#4f46e5;font-weight:400;
+  transition:transform .25s;flex-shrink:0}
+.faq.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{display:none;padding:0 1.2rem 1rem;font-size:.83rem;color:#64748b;line-height:1.7;
+  border-top:1px solid #f1f5f9}
+.faq.open .faq-a{display:block}
+
+/* CTA Banner */
+.cta-banner{
+  background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#2563eb 100%);
+  text-align:center;padding:4rem 2rem;
+}
+.cta-banner h2{font-size:2rem;font-weight:900;color:#fff;margin-bottom:.75rem}
+.cta-banner p{color:rgba(255,255,255,.8);margin-bottom:2rem;font-size:.95rem}
+.btn-white{display:inline-block;background:#fff;color:#4f46e5;font-weight:800;
+  padding:.85rem 2.5rem;border-radius:12px;text-decoration:none;font-size:.95rem;
+  box-shadow:0 4px 18px rgba(0,0,0,.2);transition:transform .15s,box-shadow .2s;cursor:pointer;border:none}
+.btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.25)}
+
+/* Footer */
+footer{background:#1e293b;color:#94a3b8;padding:2.5rem 2rem;text-align:center}
+footer .f-brand{font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:.5rem}
+footer p{font-size:.78rem;line-height:1.8}
+footer a{color:#818cf8;text-decoration:none}
+
+/* Responsive */
+@media(max-width:600px){
+  .hero h1{font-size:1.85rem}
+  nav .nav-links .hide-sm{display:none}
+  .page{padding:2rem 1rem 4rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a class="brand" href="#">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+    LiverAI
+    <span class="brand-sub">AI-Powered</span>
+  </a>
+  <div class="nav-links">
+    <a href="#about" class="hide-sm">About</a>
+    <a href="#biomarkers" class="hide-sm">Biomarkers</a>
+    <a href="#how-it-works" class="hide-sm">How It Works</a>
+    <a href="#diagnosis" class="btn-cta">Run Diagnosis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-pill">&#x2665; Clinical AI Decision Support System</div>
+  <h1>Detect Fatty Liver Disease<br/><em>with AI Precision</em></h1>
+  <p>Enter patient biochemical parameters and receive an instant AI-powered prediction with SHAP-based explainability, risk stratification, and clinical recommendations.</p>
+  <div class="hero-badges">
+    <div class="badge">Random Forest + ANN Ensemble</div>
+    <div class="badge">SHAP Explainable AI</div>
+    <div class="badge">High / Moderate / Low Risk</div>
+    <div class="badge">10 Clinical Parameters</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     DIAGNOSIS FORM
+═══════════════════════════════════════════ -->
+<section id="diagnosis" class="info-section">
+<div class="page" style="padding-top:0;padding-bottom:0">
+
+  <div class="sec-title" style="margin-bottom:1.8rem">
+    <h2>Patient Diagnosis Form</h2>
+    <p>Pre-filled with a sample high-risk patient — modify values as needed</p>
+    <div class="line"></div>
+  </div>
+
+  <div class="card" id="form-card">
+    <div class="card-header">
+      <div class="card-icon" style="background:#eef2ff">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="2"/>
+          <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
+        </svg>
+      </div>
+      <div>
+        <h3>Clinical Parameters Input</h3>
+        <p>All 10 biochemical and demographic parameters required for accurate prediction</p>
+      </div>
+    </div>
+
+    <form id="patientForm" novalidate>
+      <div class="field-group-title">Demographics</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Age <span class="unit">(years)</span></label>
+          <input type="number" id="Age" value="45" min="1" max="120" required/>
+          <span class="hint">Range: 1 – 120 years</span>
+        </div>
+        <div class="fg">
+          <label>Gender</label>
+          <select id="Gender">
+            <option value="Male" selected>Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group-title">Bilirubin Levels</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Total Bilirubin <span class="unit">(mg/dL)</span></label>
+          <input type="number" id="Total_Bilirubin" value="3.2" step="0.01" min="0" required/>
+          <span class="hint">Normal: 0.2 – 1.2</span>
+        </div>
+        <div class="fg">
+          <label>Direct Bilirubin <span class="unit">(mg/dL)</span></label>
+          <input type="number" id="Direct_Bilirubin" value="1.5" step="0.01" min="0" required/>
+          <span class="hint">Normal: 0.0 – 0.3</span>
+        </div>
+      </div>
+
+      <div class="field-group-title">Liver Enzymes</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Alkaline Phosphotase <span class="unit">(U/L)</span></label>
+          <input type="number" id="Alkaline_Phosphotase" value="320" min="0" required/>
+          <span class="hint">Normal: 44 – 147</span>
+        </div>
+        <div class="fg">
+          <label>SGPT / Alamine AT <span class="unit">(U/L)</span></label>
+          <input type="number" id="Alamine_Aminotransferase" value="95" min="0" required/>
+          <span class="hint">Normal: 7 – 56</span>
+        </div>
+        <div class="fg">
+          <label>SGOT / Aspartate AT <span class="unit">(U/L)</span></label>
+          <input type="number" id="Aspartate_Aminotransferase" value="82" min="0" required/>
+          <span class="hint">Normal: 10 – 40</span>
+        </div>
+      </div>
+
+      <div class="field-group-title">Proteins &amp; Albumin</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Total Proteins <span class="unit">(g/dL)</span></label>
+          <input type="number" id="Total_Protiens" value="5.8" step="0.1" min="0" required/>
+          <span class="hint">Normal: 6.0 – 8.3</span>
+        </div>
+        <div class="fg">
+          <label>Albumin (ALB) <span class="unit">(g/dL)</span></label>
+          <input type="number" id="Albumin" value="3.1" step="0.1" min="0" required/>
+          <span class="hint">Normal: 3.5 – 5.0</span>
+        </div>
+        <div class="fg">
+          <label>A/G Ratio</label>
+          <input type="number" id="Albumin_Globulin_Ratio" value="0.9" step="0.01" min="0" required/>
+          <span class="hint">Normal: 1.0 – 2.5</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-predict" id="predictBtn">
+        <svg id="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span id="btn-text">Analyze &amp; Predict Disease</span>
+        <div class="spin" id="btn-spin"></div>
+      </button>
+    </form>
+  </div>
+
+  <div id="err-box"></div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="result-hero" id="result-hero">
+      <div>
+        <div class="rh-title" id="rh-title">—</div>
+        <div class="risk-pill" id="rh-pill">—</div>
+        <div class="model-pills">
+          <div class="mp"><div class="mp-val" id="mp-e">—</div><div class="mp-lbl">Ensemble</div></div>
+          <div class="mp"><div class="mp-val" id="mp-r">—</div><div class="mp-lbl">Random Forest</div></div>
+          <div class="mp"><div class="mp-val" id="mp-a">—</div><div class="mp-lbl">Neural Network</div></div>
+        </div>
+      </div>
+      <div class="conf-box">
+        <div class="conf-num" id="conf-num">—</div>
+        <div class="conf-sub">Confidence Score</div>
+      </div>
+    </div>
+
+    <div class="res-grid">
+      <div class="card">
+        <div class="rc-title">AI Feature Contributions (SHAP)</div>
+        <canvas id="shapChart" style="max-height:250px"></canvas>
+        <p style="font-size:.69rem;color:#94a3b8;margin-top:.6rem;text-align:center">
+          Red = increases risk &nbsp;|&nbsp; Green = decreases risk
+        </p>
+      </div>
+      <div class="card">
+        <div class="rc-title">Abnormal Parameter Flags</div>
+        <div id="flags-box"><p class="flag-ok">&#10003; All monitored parameters within normal range.</p></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.2rem">
+      <div class="rc-title">Clinical Recommendations</div>
+      <div id="rec-box"></div>
+    </div>
+
+    <button class="btn-reset" onclick="resetForm()">&#8635; Run New Analysis</button>
+  </div>
+
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     ABOUT THE DISEASE
+═══════════════════════════════════════════ -->
+<section id="about" class="info-section">
+<div class="page">
+  <div class="sec-title">
+    <h2>What is Fatty Liver Disease?</h2>
+    <p>A growing epidemic affecting over 25% of the global population — often completely silent until advanced stages</p>
+    <div class="line"></div>
+  </div>
+
+  <div class="stats-row" style="margin-bottom:2.5rem">
+    <div class="stat-box"><div class="s-num">25%</div><div class="s-lbl">Global Prevalence</div></div>
+    <div class="stat-box"><div class="s-num">80%</div><div class="s-lbl">Cases Asymptomatic</div></div>
+    <div class="stat-box"><div class="s-num">20%</div><div class="s-lbl">Progress to Cirrhosis</div></div>
+    <div class="stat-box"><div class="s-num">2x</div><div class="s-lbl">Higher Diabetes Risk</div></div>
+  </div>
+
+  <div class="feature-cards">
+    <div class="feat-card">
+      <div class="ficon" style="background:#fff7ed">&#x1F9EA;</div>
+      <h4>NAFLD (Non-Alcoholic)</h4>
+      <p>Fat accumulation in liver cells not caused by alcohol. Strongly linked to obesity, Type 2 diabetes, and metabolic syndrome.</p>
+    </div>
+    <div class="feat-card">
+      <div class="ficon" style="background:#fef2f2">&#x1F37A;</div>
+      <h4>ALD (Alcoholic)</h4>
+      <p>Caused by excessive alcohol consumption. Ranges from simple steatosis to alcoholic hepatitis and cirrhosis.</p>
+    </div>
+    <div class="feat-card">
+      <div class="ficon" style="background:#fdf4ff">&#x26A0;</div>
+      <h4>NASH (Non-Alcoholic Steatohepatitis)</h4>
+      <p>An advanced form of NAFLD with active liver inflammation and cell damage — a precursor to cirrhosis and liver cancer.</p>
+    </div>
+    <div class="feat-card">
+      <div class="ficon" style="background:#f0fdf4">&#x1F4CA;</div>
+      <h4>Silent Progression</h4>
+      <p>Most patients experience no symptoms. By the time symptoms appear (fatigue, abdominal pain), liver damage may already be significant.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     BIOMARKERS
+═══════════════════════════════════════════ -->
+<section id="biomarkers" class="info-section">
+<div class="page">
+  <div class="sec-title">
+    <h2>Understanding Key Biomarkers</h2>
+    <p>The 10 clinical parameters used by the AI model and their Normal Ranges as per the Mayo Clinic</p>
+    <div class="line"></div>
+  </div>
+
+  <table class="bio-table">
+    <thead>
+      <tr>
+        <th>Parameter</th>
+        <th>Normal Range</th>
+        <th>Significance in Liver Disease</th>
+        <th>Unit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Total Bilirubin</td><td><span class="pill-normal">0.2 – 1.2</span></td><td>Elevated levels indicate impaired liver excretion or haemolysis</td><td>mg/dL</td></tr>
+      <tr><td>Direct Bilirubin</td><td><span class="pill-normal">0.0 – 0.3</span></td><td>Specific marker for hepatocellular or obstructive jaundice</td><td>mg/dL</td></tr>
+      <tr><td>Alkaline Phosphotase</td><td><span class="pill-normal">44 – 147</span></td><td>Raised in biliary obstruction and infiltrative liver disease</td><td>U/L</td></tr>
+      <tr><td>SGPT (Alamine AT)</td><td><span class="pill-normal">7 – 56</span></td><td>Primary hepatocellular damage marker — liver-specific enzyme</td><td>U/L</td></tr>
+      <tr><td>SGOT (Aspartate AT)</td><td><span class="pill-normal">10 – 40</span></td><td>Elevated in hepatitis, cirrhosis, and alcoholic liver disease</td><td>U/L</td></tr>
+      <tr><td>Total Proteins</td><td><span class="pill-normal">6.0 – 8.3</span></td><td>Low levels reflect reduced liver synthetic function</td><td>g/dL</td></tr>
+      <tr><td>Albumin (ALB)</td><td><span class="pill-normal">3.5 – 5.0</span></td><td>Chronic liver disease hallmark — falls as function declines</td><td>g/dL</td></tr>
+      <tr><td>A/G Ratio</td><td><span class="pill-normal">1.0 – 2.5</span></td><td>Reversed ratio indicates chronic hepatic or inflammatory disease</td><td>—</td></tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     RISK LEVELS
+═══════════════════════════════════════════ -->
+<section class="info-section">
+<div class="page">
+  <div class="sec-title">
+    <h2>Risk Level Classification</h2>
+    <p>The AI model outputs a probability score converted into three actionable clinical risk tiers</p>
+    <div class="line"></div>
+  </div>
+  <div class="risk-cards">
+    <div class="risk-card low">
+      <div class="r-pct">&lt;50%</div>
+      <h4>Low Risk</h4>
+      <p>Probability below 50%. Liver parameters are largely within normal range. Annual monitoring recommended with lifestyle maintenance.</p>
+    </div>
+    <div class="risk-card mod">
+      <div class="r-pct">50–80%</div>
+      <h4>Moderate Risk</h4>
+      <p>Probability between 50% and 80%. Some parameters deviate from normal. Physician follow-up within 2 weeks advised.</p>
+    </div>
+    <div class="risk-card high">
+      <div class="r-pct">&gt;80%</div>
+      <h4>High Risk</h4>
+      <p>Probability above 80%. Multiple biomarkers significantly elevated. Immediate hepatologist referral and LFT panel required.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     HOW IT WORKS
+═══════════════════════════════════════════ -->
+<section id="how-it-works" class="info-section">
+<div class="page">
+  <div class="sec-title">
+    <h2>How the AI System Works</h2>
+    <p>A transparent, step-by-step pipeline from raw clinical data to explainable diagnosis</p>
+    <div class="line"></div>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <h4>Data Input</h4>
+      <p>Patient's 10 biochemical and demographic parameters are entered and validated against acceptable clinical ranges.</p>
+    </div>
+    <div class="step">
+      <h4>Preprocessing</h4>
+      <p>Gender encoding, median imputation of missing values, and StandardScaler Z-score normalisation applied identically to training.</p>
+    </div>
+    <div class="step">
+      <h4>Random Forest</h4>
+      <p>200-tree ensemble constructs a probability from learned decision boundaries across multiple clinical parameter combinations.</p>
+    </div>
+    <div class="step">
+      <h4>Neural Network</h4>
+      <p>4-layer ANN with BatchNorm and Dropout produces a second independent probability using deep feature representations.</p>
+    </div>
+    <div class="step">
+      <h4>Ensemble Fusion</h4>
+      <p>Both model probabilities are averaged to produce a final confidence score — more robust than any single model alone.</p>
+    </div>
+    <div class="step">
+      <h4>SHAP Explanation</h4>
+      <p>TreeExplainer calculates each feature's contribution (positive or negative) to the specific prediction — no black box.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FAQ
+═══════════════════════════════════════════ -->
+<section class="info-section">
+<div class="page">
+  <div class="sec-title">
+    <h2>Frequently Asked Questions</h2>
+    <p>Common questions about the system, the disease, and AI-assisted diagnosis</p>
+    <div class="line"></div>
+  </div>
+  <div class="faqs">
+    <div class="faq">
+      <div class="faq-q">Is this a replacement for a doctor's diagnosis?</div>
+      <div class="faq-a">No. LiverAI is a <strong>clinical decision support tool</strong>. It assists healthcare professionals by flagging high-risk patients and explaining contributing factors. It does not replace clinical examination, imaging, or specialist consultation.</div>
+    </div>
+    <div class="faq">
+      <div class="faq-q">What dataset was used to train the model?</div>
+      <div class="faq-a">The model was trained on the <strong>Indian Liver Patient Dataset (ILPD)</strong>, containing 30000 patient records with 10 clinical parameters collected from hospitals in Andhra Pradesh, India.</div>
+    </div>
+    <div class="faq">
+      <div class="faq-q">Why are two models used together?</div>
+      <div class="faq-a">Random Forest and ANN each capture different patterns in data. Averaging their probabilities (ensemble learning) reduces individual model variance and consistently outperforms either model alone on unseen data.</div>
+    </div>
+    <div class="faq">
+      <div class="faq-q">What does a SHAP value mean?</div>
+      <div class="faq-a">A positive SHAP value means that feature <em>pushed the prediction toward disease</em>. A negative value means it pushed toward no disease. The magnitude shows how strongly it influenced the final prediction for that specific patient.</div>
+    </div>
+    <div class="faq">
+      <div class="faq-q">Can fatty liver disease be reversed?</div>
+      <div class="faq-a">Yes — in early stages (simple steatosis and early NASH), fatty liver is <strong>fully reversible</strong> through weight loss (5–10% body weight), exercise, elimination of alcohol, and dietary changes. Early detection is therefore critical.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CTA
+═══════════════════════════════════════════ -->
+<div class="cta-banner">
+  <h2>Ready to Run an Analysis?</h2>
+  <p>Enter patient parameters above and get an instant AI-powered liver disease assessment with full explainability.</p>
+  <button class="btn-white" onclick="document.getElementById('diagnosis').scrollIntoView({behavior:'smooth'})">
+    Start Diagnosis Now
+  </button>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-brand">LiverAI</div>
+  <p>AI-Powered Fatty Liver Disease Detection System &bull; Built with Random Forest, ANN, and SHAP<br/>
+  For clinical decision support only &mdash; Not a substitute for professional medical advice.<br/>
+  &copy; 2025 LiverAI. Dataset: Indian Liver Patient Dataset (ILPD).</p>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+const $ = id => document.getElementById(id);
+const gv = id => $(id)?.value ?? "";
+let shapChart = null;
+
+$("patientForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("err-box").style.display = "none";
+
+  $("predictBtn").disabled = true;
+  $("btn-icon").style.display = "none";
+  $("btn-text").textContent = "Analyzing...";
+  $("btn-spin").style.display = "block";
+
+  const payload = {
+    Age: gv("Age"), Gender: gv("Gender"),
+    Total_Bilirubin: gv("Total_Bilirubin"),
+    Direct_Bilirubin: gv("Direct_Bilirubin"),
+    Alkaline_Phosphotase: gv("Alkaline_Phosphotase"),
+    Alamine_Aminotransferase: gv("Alamine_Aminotransferase"),
+    Aspartate_Aminotransferase: gv("Aspartate_Aminotransferase"),
+    Total_Protiens: gv("Total_Protiens"),
+    Albumin: gv("Albumin"),
+    Albumin_Globulin_Ratio: gv("Albumin_Globulin_Ratio"),
+  };
+
+  try {
+    const res  = await fetch("/predict", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    render(data);
+  } catch(err) {
+    $("err-box").innerHTML = "<strong>Prediction Error:</strong> " + err.message;
+    $("err-box").style.display = "block";
+  } finally {
+    $("predictBtn").disabled = false;
+    $("btn-icon").style.display = "block";
+    $("btn-text").textContent = "Analyze & Predict Disease";
+    $("btn-spin").style.display = "none";
+  }
+});
+
+function render(d) {
+  const isDisease = d.binary_label === 1;
+  const heroClass = isDisease ? (d.risk_level === "High" ? "rh-disease" : "rh-moderate") : "rh-healthy";
+  const recClass  = d.risk_level === "High" ? "rec-disease" : d.risk_level === "Moderate" ? "rec-moderate" : "rec-low";
+
+  const hero = $("result-hero");
+  hero.className = "result-hero " + heroClass;
+  $("rh-title").textContent       = d.status;
+  $("rh-pill").textContent        = "Risk Level: " + d.risk_level;
+  $("conf-num").textContent       = d.confidence_pct + "%";
+  $("mp-e").textContent           = d.confidence_pct + "%";
+  $("mp-r").textContent           = d.rf_confidence_pct + "%";
+  $("mp-a").textContent           = d.ann_confidence_pct + "%";
+
+  // SHAP
+  const labels = d.shap_factors.map(f => f.feature);
+  const values = d.shap_factors.map(f => f.value);
+  const bgc    = values.map(v => v >= 0 ? "rgba(220,38,38,.7)" : "rgba(22,163,74,.7)");
+  const bdc    = values.map(v => v >= 0 ? "#dc2626" : "#16a34a");
+  if (shapChart) shapChart.destroy();
+  shapChart = new Chart($("shapChart"), {
+    type: "bar",
+    data: { labels, datasets: [{ label:"SHAP", data:values, backgroundColor:bgc, borderColor:bdc, borderWidth:1.5, borderRadius:5 }] },
+    options: {
+      indexAxis: "y", responsive: true,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>" SHAP: "+(c.raw>0?"+":"")+c.raw.toFixed(4)}} },
+      scales: {
+        x: { grid:{color:"#f1f5f9"}, ticks:{color:"#64748b",font:{size:10}}, title:{display:true,text:"SHAP Value",color:"#94a3b8",font:{size:10}} },
+        y: { grid:{display:false}, ticks:{color:"#374151",font:{size:10.5}} }
+      }
+    }
+  });
+
+  // Flags
+  const fbox = $("flags-box");
+  if (d.abnormal_flags?.length) {
+    fbox.innerHTML = d.abnormal_flags.map(f => `<div class="flag">&#9888; ${f}</div>`).join("");
+  } else {
+    fbox.innerHTML = `<p class="flag-ok">&#10003; All monitored parameters are within normal range.</p>`;
+  }
+
+  // Recs
+  $("rec-box").innerHTML = d.recommendations.map((r,i) =>
+    `<div class="rec-item">
+      <div class="rec-num ${recClass}">${i+1}</div>
+      <div class="rec-text">${r}</div>
+    </div>`).join("");
+
+  $("results").style.display = "block";
+  setTimeout(() => $("results").scrollIntoView({behavior:"smooth",block:"start"}), 80);
+}
+
+function resetForm() {
+  $("results").style.display = "none";
+  $("err-box").style.display = "none";
+  $("form-card").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+// FAQ toggle
+document.querySelectorAll(".faq-q").forEach(q => {
+  q.addEventListener("click", () => q.parentElement.classList.toggle("open"));
+});
+</script>
+</body>
+</html>
